@@ -1,5 +1,5 @@
 # test_monolithic.py
-from monolithic_inventory import create_tables, SessionLocal, create_product, get_all_products
+from monolithic_app import create_tables, SessionLocal, create_product, get_all_products
 
 def test_system():
     try:
