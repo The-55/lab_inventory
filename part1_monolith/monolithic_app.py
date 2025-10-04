@@ -2,17 +2,14 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import sys
 
-# Configuration de la base de données
+# Database setup
 DATABASE_URL = "postgresql://inventory:inventory@localhost:5432/inventory"
-
-# Initialisation SQLAlchemy
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Modèle de données
+# Product model
 class Product(Base):
     __tablename__ = "products"
     
@@ -21,38 +18,30 @@ class Product(Base):
     quantity = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
 
-# Création des tables
+# Create tables
 def create_tables():
     Base.metadata.create_all(bind=engine)
-    print("Tables créées avec succès!")
 
-# Validation des données
-def validate_product_data(name, quantity, price):
-    errors = []
-    
-    if not name or len(name.strip()) == 0:
-        errors.append("Le nom du produit ne peut pas être vide")
-    
+# Validation
+def validate_product(name, quantity, price):
     if quantity < 0:
-        errors.append("La quantité ne peut pas être négative")
-    
+        return "Quantity cannot be negative"
     if price < 0:
-        errors.append("Le prix ne peut pas être négatif")
-    
-    return errors
+        return "Price cannot be negative"
+    if not name.strip():
+        return "Name cannot be empty"
+    return None
 
-# Opérations CRUD
+# CRUD operations
 def create_product(session, name, quantity, price):
-    # Validation
-    errors = validate_product_data(name, quantity, price)
-    if errors:
-        return False, errors
+    error = validate_product(name, quantity, price)
+    if error:
+        return False, error
     
-    # Création du produit
     product = Product(name=name, quantity=quantity, price=price)
     session.add(product)
     session.commit()
-    return True, f"Produit '{name}' créé avec ID: {product.id}"
+    return True, f"Product created with ID: {product.id}"
 
 def get_all_products(session):
     return session.query(Product).all()
@@ -63,168 +52,128 @@ def get_product_by_id(session, product_id):
 def update_product(session, product_id, name=None, quantity=None, price=None):
     product = get_product_by_id(session, product_id)
     if not product:
-        return False, "Produit non trouvé"
+        return False, "Product not found"
     
-    # Validation des nouvelles valeurs
     if name is not None:
-        if len(name.strip()) == 0:
-            return False, ["Le nom ne peut pas être vide"]
         product.name = name
-    
     if quantity is not None:
         if quantity < 0:
-            return False, ["La quantité ne peut pas être négative"]
+            return False, "Quantity cannot be negative"
         product.quantity = quantity
-    
     if price is not None:
         if price < 0:
-            return False, ["Le prix ne peut pas être négative"]
+            return False, "Price cannot be negative"
         product.price = price
     
     session.commit()
-    return True, "Produit mis à jour avec succès"
+    return True, "Product updated"
 
 def delete_product(session, product_id):
     product = get_product_by_id(session, product_id)
     if not product:
-        return False, "Produit non trouvé"
+        return False, "Product not found"
     
     session.delete(product)
     session.commit()
-    return True, "Produit supprimé avec succès"
+    return True, "Product deleted"
 
-# Affichage des produits
-def display_products(products):
+# Display products
+def show_products(products):
     if not products:
-        print("Aucun produit trouvé")
+        print("No products found")
         return
     
-    print("\n" + "="*60)
-    print(f"{'ID':<5} {'Nom':<20} {'Quantité':<10} {'Prix':<10}")
-    print("="*60)
-    for product in products:
-        print(f"{product.id:<5} {product.name:<20} {product.quantity:<10} {product.price:<10.2f}")
-    print("="*60)
+    print("\n" + "="*50)
+    print(f"{'ID':<5} {'Name':<15} {'Qty':<10} {'Price':<10}")
+    print("="*50)
+    for p in products:
+        print(f"{p.id:<5} {p.name:<15} {p.quantity:<10} {p.price:<10.2f}")
+    print("="*50)
 
-# Interface utilisateur
-def main_menu():
-    print("\n=== GESTIONNAIRE D'INVENTAIRE MONOLITHIQUE ===")
-    print("1. Afficher tous les produits")
-    print("2. Ajouter un produit")
-    print("3. Modifier un produit")
-    print("4. Supprimer un produit")
-    print("5. Rechercher un produit par ID")
-    print("6. Quitter")
-    
-    return input("Choisissez une option (1-6): ")
-
+# User interface
 def main():
-    # Création des tables
-    try:
-        create_tables()
-    except Exception as e:
-        print(f"Erreur de connexion à la base de données: {e}")
-        print("Vérifiez que PostgreSQL est démarré et que la base 'inventory' existe")
-        return
-    
+    create_tables()
     session = SessionLocal()
     
     while True:
-        choice = main_menu()
+        print("\n=== INVENTORY MANAGEMENT ===")
+        print("1. Show all products")
+        print("2. Add product")
+        print("3. Update product")
+        print("4. Delete product")
+        print("5. Find product by ID")
+        print("6. Exit")
+        
+        choice = input("Choose option (1-6): ")
         
         if choice == '1':
-            # Afficher tous les produits
             products = get_all_products(session)
-            display_products(products)
+            show_products(products)
             
         elif choice == '2':
-            # Ajouter un produit
-            print("\n--- AJOUTER UN PRODUIT ---")
-            name = input("Nom du produit: ")
+            print("\n--- ADD PRODUCT ---")
+            name = input("Product name: ")
             try:
-                quantity = int(input("Quantité: "))
-                price = float(input("Prix: "))
-            except ValueError:
-                print("Erreur: La quantité et le prix doivent être des nombres")
+                quantity = int(input("Quantity: "))
+                price = float(input("Price: "))
+            except:
+                print("Error: Quantity and price must be numbers")
                 continue
             
-            success, result = create_product(session, name, quantity, price)
-            if success:
-                print(f"✓ {result}")
-            else:
-                print("✗ Erreurs:")
-                for error in result:
-                    print(f"  - {error}")
-                    
+            success, message = create_product(session, name, quantity, price)
+            print(f"{'✓' if success else '✗'} {message}")
+            
         elif choice == '3':
-            # Modifier un produit
-            print("\n--- MODIFIER UN PRODUIT ---")
+            print("\n--- UPDATE PRODUCT ---")
             try:
-                product_id = int(input("ID du produit à modifier: "))
-            except ValueError:
-                print("Erreur: L'ID doit être un nombre")
+                product_id = int(input("Product ID to update: "))
+            except:
+                print("Error: ID must be a number")
                 continue
             
-            product = get_product_by_id(session, product_id)
-            if not product:
-                print("✗ Produit non trouvé")
-                continue
+            name = input("New name (leave empty to keep current): ").strip()
+            name = name if name else None
             
-            print(f"Produit actuel: {product.name}, Quantité: {product.quantity}, Prix: {product.price}")
+            quantity_input = input("New quantity (leave empty to keep current): ").strip()
+            quantity = int(quantity_input) if quantity_input else None
             
-            name = input("Nouveau nom (laisser vide pour ne pas changer): ")
-            name = name if name.strip() else None
+            price_input = input("New price (leave empty to keep current): ").strip()
+            price = float(price_input) if price_input else None
             
-            quantity_str = input("Nouvelle quantité (laisser vide pour ne pas changer): ")
-            quantity = int(quantity_str) if quantity_str.strip() else None
+            success, message = update_product(session, product_id, name, quantity, price)
+            print(f"{'✓' if success else '✗'} {message}")
             
-            price_str = input("Nouveau prix (laisser vide pour ne pas changer): ")
-            price = float(price_str) if price_str.strip() else None
-            
-            success, result = update_product(session, product_id, name, quantity, price)
-            if success:
-                print(f"✓ {result}")
-            else:
-                print("✗ Erreurs:")
-                for error in result:
-                    print(f"  - {error}")
-                    
         elif choice == '4':
-            # Supprimer un produit
-            print("\n--- SUPPRIMER UN PRODUIT ---")
+            print("\n--- DELETE PRODUCT ---")
             try:
-                product_id = int(input("ID du produit à supprimer: "))
-            except ValueError:
-                print("Erreur: L'ID doit être un nombre")
+                product_id = int(input("Product ID to delete: "))
+            except:
+                print("Error: ID must be a number")
                 continue
             
-            success, result = delete_product(session, product_id)
-            if success:
-                print(f"✓ {result}")
-            else:
-                print(f"✗ {result}")
-                
+            success, message = delete_product(session, product_id)
+            print(f"{'✓' if success else '✗'} {message}")
+            
         elif choice == '5':
-            # Rechercher par ID
-            print("\n--- RECHERCHER UN PRODUIT ---")
+            print("\n--- FIND PRODUCT ---")
             try:
-                product_id = int(input("ID du produit: "))
-            except ValueError:
-                print("Erreur: L'ID doit être un nombre")
+                product_id = int(input("Product ID: "))
+            except:
+                print("Error: ID must be a number")
                 continue
             
             product = get_product_by_id(session, product_id)
             if product:
-                display_products([product])
+                show_products([product])
             else:
-                print("✗ Produit non trouvé")
+                print("Product not found")
                 
         elif choice == '6':
-            print("Au revoir!")
+            print("Goodbye!")
             break
             
         else:
-            print("Option invalide. Veuillez choisir entre 1 et 6.")
+            print("Invalid option")
     
     session.close()
 
