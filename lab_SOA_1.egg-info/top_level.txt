@@ -1,0 +1,3 @@
+part1_monolith
+part2_SOAP_webservice
+part3_RESTful_webservice

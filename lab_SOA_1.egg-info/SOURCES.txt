@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+readme.md
+lab_SOA_1.egg-info/PKG-INFO
+lab_SOA_1.egg-info/SOURCES.txt
+lab_SOA_1.egg-info/dependency_links.txt
+lab_SOA_1.egg-info/requires.txt
+lab_SOA_1.egg-info/top_level.txt
+part1_monolith/monolithic_app.py
+part1_monolith/test_monolithic.py

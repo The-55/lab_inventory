@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: lab_SOA_1
+Version: 0.1.0
+Description-Content-Type: text/markdown
+Requires-Dist: PyQt5
+Requires-Dist: sqlalchemy
+Requires-Dist: psycopg2-binary
+Requires-Dist: spyne
+Requires-Dist: lxml
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+Requires-Dist: pydantic
+Requires-Dist: pytest
+Provides-Extra: dev
+Requires-Dist: pytest>=8.4.1; extra == "dev"
+Requires-Dist: black>=25.1.0; extra == "dev"
+
+## The limitations of of this monolithic approach : 
+
+Tight coupling because all code is in one file
+
+Hard to reuse cannot use parts in other applications
+
+No API - Other apps cannot connect to it
+
+Hard to test due to the difficulty to write unit tests
+
